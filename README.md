@@ -21,7 +21,7 @@ Basic help (`cdd -h`):
 ```
 Usage: cdd [OPTIONS] ...
 Perform "cd" to a matching recently-used path.
-Paths are saved in a file after successful "cd" or "cdd".
+Paths are saved in a history file after successful "cd" or "cdd".
 
   cdd -h | --help     Print basic help and exit.
   cdd -hh             Print extended help and exit.
@@ -44,10 +44,11 @@ Copyright 2024 Avi Halachmi  Home page: https://github.com/avih/cdd.sh
 
 Extended help (`cdd -hh`) is same as the basic help, plus:
 ```
-  (CDPERM matches at the -p output begin with ": ").
+  CDPERM matches at the -p output begin with ": ".
 
   If both CDHIST and CDPERM exist, CDHIST is searched first.
   CDHIST is not created/searched/updated if $CDHIST is set and empty.
+  (new paths are never saved, cdd only searches CDPERM, no updates)
   CDHIST is not created if its directory doesn't exist (cdd fails).
   CDHIST is not updated if the path was matched using CDPERM file.
   CDHIST is not updated if the path is $HOME or contains newline.

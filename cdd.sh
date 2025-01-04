@@ -14,7 +14,7 @@
 __cdd_help() {
     echo 'Usage: cdd [OPTIONS] ...'
     echo 'Perform "cd" to a matching recently-used path.'
-    echo 'Paths are saved in a file after successful "cd" or "cdd".'
+    echo 'Paths are saved in a history file after successful "cd" or "cdd".'
     echo
     echo '  cdd -h | --help     Print basic help and exit.'
     echo '  cdd -hh             Print extended help and exit.'
@@ -30,10 +30,11 @@ __cdd_help() {
     echo '  - Set CDLOOKUP=1 to automatically run "cdd STR" if "cd STR" fails.'
     echo '  - Set CDHIST=  (set+empty) to disable recording/lookup in this file.'
     echo '  - If $CDPERM is set, this file is searched [too], but never updated.'
-e&& echo '    (CDPERM matches at the -p output begin with ": ").'
+e&& echo '    CDPERM matches at the -p output begin with ": ".'
     echo
 e&& echo '  If both CDHIST and CDPERM exist, CDHIST is searched first.'
 e&& echo '  CDHIST is not created/searched/updated if $CDHIST is set and empty.'
+e&& echo '  (new paths are never saved, cdd only searches CDPERM, no updates)'
 e&& echo "  CDHIST is not created if its directory doesn't exist (cdd fails)."
 e&& echo '  CDHIST is not updated if the path was matched using CDPERM file.'
 e&& echo '  CDHIST is not updated if the path is $HOME or contains newline.'
@@ -52,11 +53,13 @@ e&& echo
 }
 
 if [ -z "${CDGREP-}" ]; then
-    __cdd_list2() { __cdd_list "$@"; }  # __cdd_list with $2 prefix
-    __cdd_list() {  # print input lines which contain $1
+    __cdd_list2() {  # print input lines which contain $1, add $2 prefix
         while IFS= read -r cdd; do
-            case $cdd in *"$1"*) echo "${2-}$cdd"; esac
+            case $cdd in *"$1"*) echo "$2$cdd"; esac
         done
+    }
+    __cdd_list() {  # print input lines which contain $1
+        __cdd_list2 "$1" ""
     }
     __cdd_match() {  # set $cdd to the first line which contains $1, or fail
         while IFS= read -r cdd; do
