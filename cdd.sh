@@ -18,7 +18,7 @@ __cdd_help() {
     echo
     echo '  cdd -h | --help     Print basic help and exit.'
     echo '  cdd -hh             Print extended help and exit.'
-    echo                     
+    echo
     echo '  cdd STR             cd to the first stored path which contains STR.'
     echo '  cdd -p [STR]        Print all stored paths [which contain STR].'
     echo '  cdd -f              Flush - move $PWD now to the top of CDHIST.'
