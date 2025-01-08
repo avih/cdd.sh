@@ -61,4 +61,9 @@ Extended help (`cdd -hh`) is same as the basic help, plus:
 
   Uses shell for search, which may be slow-ish with big CDHISTSIZE.
   Set CDGREP=1 to use to grep instead (requires re-dot of cdd.sh).
+
+  To restore the shell builtin "cd" (disable the wrapper, so history
+  will not update after "cd"), do "unset -f cd" after dotting cdd.sh.
+  In this case cdd still behaves normally - "cdd STR" changes dir and
+  can update the history, while "cdd -f" adds/moves the current path.
 ```

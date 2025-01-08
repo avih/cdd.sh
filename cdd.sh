@@ -48,6 +48,11 @@ e&& echo
 e&& echo '  Uses shell for search, which may be slow-ish with big CDHISTSIZE.'
 e&& echo '  Set CDGREP=1 to use to grep instead (requires re-dot of cdd.sh).'
 e&& echo
+e&& echo '  To restore the shell builtin "cd" (disable the wrapper, so history'
+e&& echo '  will not update after "cd"), do "unset -f cd" after dotting cdd.sh.'
+e&& echo '  In this case cdd still behaves normally - "cdd STR" changes dir and'
+e&& echo '  can update the history, while "cdd -f" adds/moves the current path.'
+e&& echo
     echo 'Requires: POSIX shell or zsh, touch, mv, optionally grep/sed/head.'
     echo 'Copyright 2024 Avi Halachmi  Home page: https://github.com/avih/cdd.sh'
 }
