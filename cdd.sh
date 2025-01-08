@@ -48,7 +48,7 @@ e&& echo
 e&& echo '  Uses shell for search, which may be slow-ish with big CDHISTSIZE.'
 e&& echo '  Set CDGREP=1 to use to grep instead (requires re-dot of cdd.sh).'
 e&& echo
-    echo 'Requires: POSIX shell, touch, mv, optionally grep/sed/head.'
+    echo 'Requires: POSIX shell or zsh, touch, mv, optionally grep/sed/head.'
     echo 'Copyright 2024 Avi Halachmi  Home page: https://github.com/avih/cdd.sh'
 }
 
@@ -86,6 +86,10 @@ else
     __cdd_update() { grep -F -x -v -- "$PWD" | head -n "$1"; }
 fi
 
+[ "${ZSH_VERSION-}" ] &&  # run a shell-builtin
+    __cdd_builtin() { builtin "$@"; } ||
+    __cdd_builtin() { command "$@"; }
+
 __cdd_hist_ok() { [ -f "$CDHIST" ] || touch -- "$CDHIST"; }
 __cdd_err()     { >&2 echo "cdd: ${2-error: }$1"; false; }
 __cdd_LF="
@@ -106,9 +110,9 @@ __cdd_success() {
 
 cd() {
     if [ "${CDLOOKUP-}" ] && [ "$#" = 1 ] && case $1 in -*) false; esac; then
-        command cd "$1" 2>/dev/null || { cdd "$1"; return; }
+        __cdd_builtin cd "$1" 2>/dev/null || { cdd "$1"; return; }
     else
-        command cd "$@" || return
+        __cdd_builtin cd "$@" || return
     fi
     [ -z "$CDHIST" ] || { __cdd_hist_ok && __cdd_success; }
 }
@@ -136,9 +140,9 @@ cdd() {
         [ -z "$CDPERM" ] || __cdd_list2 "${1-}" ": " < "$CDPERM"
         ;;
      *) if [ "$CDHIST" ] && __cdd_match "$1" < "$CDHIST"; then
-            command cd -- "$cdd" && echo "$cdd" && __cdd_success
+            __cdd_builtin cd -- "$cdd" && echo "$cdd" && __cdd_success
         elif [ "$CDPERM" ] && __cdd_match "$1" < "$CDPERM"; then
-            command cd -- "$cdd" && echo "$cdd"
+            __cdd_builtin cd -- "$cdd" && echo "$cdd"
         else
             __cdd_err "match not found -- $1" ''
         fi

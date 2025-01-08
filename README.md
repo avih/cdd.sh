@@ -38,7 +38,7 @@ Paths are saved in a history file after successful "cd" or "cdd".
   - Set CDHIST=  (set+empty) to disable recording/lookup in this file.
   - If $CDPERM is set, this file is searched [too], but never updated.
 
-Requires: POSIX shell, touch, mv, optionally grep/sed/head.
+Requires: POSIX shell or zsh, touch, mv, optionally grep/sed/head.
 Copyright 2024 Avi Halachmi  Home page: https://github.com/avih/cdd.sh
 ```
 
