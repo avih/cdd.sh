@@ -19,22 +19,29 @@ __cdd_help() {
     echo '  cdd -h | --help     Print basic help and exit.'
     echo '  cdd -hh             Print extended help and exit.'
     echo
-    echo '  cdd STR             cd to the first stored path which contains STR.'
-    echo '  cdd -p [STR]        Print all stored paths [which contain STR].'
-    echo '  cdd -f              Flush - move $PWD now to the top of CDHIST.'
+    echo '  cdd PAT             cd to the first stored path which contains PAT.'
+    echo '  cdd -p [PAT]        Print all stored paths [which contain PAT].'
+    echo '  cdd -f              Flush - add/move $PWD now to the top of CDHIST.'
     echo
-    echo '  - When cdd succeeds and changes-dir, the path is printed to stdout.'
-    echo '  - When cd or cdd succeed, $PWD is moved to the top of $CDHIST file'
-    echo "    (def: ~/.cd_hist), except if it's already near the top. See info"
-    echo '    in extended help. CDHIST holds up to $CDHISTSIZE paths (def: 100).'
-    echo '  - Set CDLOOKUP=1 to automatically run "cdd STR" if "cd STR" fails.'
-    echo '  - Set CDHIST=  (set+empty) to disable recording/lookup in this file.'
+    echo '  - PAT is sub-pattern, e.g. all of "abc", "bc", "c*f" match "abcdef".'
+e&& echo '    Implemented as shell unquoted   case...in *$PAT*)...   therefore:'
+e&& echo '    - PAT without pattern/esc chars (* ? [ ] \) matches a sub-string.'
+e&& echo "    - '*', '?', and simple '[...]' apply normally in all POSIX shells."
+e&& echo "    - Escaped '\<thing>' or non-trivial PAT may differ between shells."
+e&& echo '    - In zsh PAT is a sub-string by default. May depend on sh options.'
+e&& echo '    - See also CDGREP below, to use grep instead of shell pattern.'
+e&& echo '  - When cdd succeeds and changes dir, the path is printed to stdout.'
+    echo '  - When cd or cdd succeed, $PWD is moved to the top of $CDHIST file,'
+    echo "    unless it's already within the top $CDTHRESH paths (default: ~/.cd_hist)."
+e&& echo '  - This update and -f keep the top $CDHISTSIZE paths (default: 100).'
+    echo '  - Set CDLOOKUP=1 to automatically run "cdd ARG" if "cd ARG" fails.'
+    echo '  - Set CDHIST=  (set+empty) to disable (ignore) the history file.'
     echo '  - If $CDPERM is set, this file is searched [too], but never updated.'
 e&& echo '    CDPERM matches at the -p output begin with ": ".'
     echo
-e&& echo '  If both CDHIST and CDPERM exist, CDHIST is searched first.'
+e&& echo '  If both CDHIST and CDPERM files exist, CDHIST is searched first.'
 e&& echo '  CDHIST is not created/searched/updated if $CDHIST is set and empty.'
-e&& echo '  (new paths are never saved, cdd only searches CDPERM, no updates)'
+e&& echo '  ($CDPERM file is still searched if non-empty)'
 e&& echo "  CDHIST is not created if its directory doesn't exist (cdd fails)."
 e&& echo '  CDHIST is not updated if the path was matched using CDPERM file.'
 e&& echo '  CDHIST is not updated if the path is $HOME or contains newline.'
@@ -46,29 +53,30 @@ e&& echo "  recent, but usually that's OK. Use cdd -f to move \$PWD to the top"
 e&& echo '  regardless of $CDTHRESH, or set CDTHRESH=0 to always update CDHIST.'
 e&& echo
 e&& echo '  Uses shell for search, which may be slow-ish with big CDHISTSIZE.'
-e&& echo '  Set CDGREP=1 to use to grep instead (requires re-dot of cdd.sh).'
+e&& echo '  Set CDGREP=1 to use grep instead (requires re-dot of cdd.sh).'
+e&& echo '  This uses PAT as grep BRE pattern instead of a shell sub-pattern.'
 e&& echo
 e&& echo '  To restore the shell builtin "cd" (disable the wrapper, so history'
 e&& echo '  will not update after "cd"), do "unset -f cd" after dotting cdd.sh.'
-e&& echo '  In this case cdd still behaves normally - "cdd STR" changes dir and'
-e&& echo '  can update the history, while "cdd -f" adds/moves the current path.'
+e&& echo '  In this case cdd still works normally - "cdd PAT" changes dir and'
+e&& echo '  can update the history, while "cdd -f" adds/moves $PWD to the top.'
 e&& echo
     echo 'Requires: POSIX shell or zsh, touch, mv, optionally grep/sed/head.'
     echo 'Copyright 2024 Avi Halachmi  Home page: https://github.com/avih/cdd.sh'
 }
 
 if [ -z "${CDGREP-}" ]; then
-    __cdd_list2() {  # print input lines which contain $1, add $2 prefix
+    __cdd_list2() {  # print input lines which match *$1*, add $2 prefix
         while IFS= read -r cdd; do
-            case $cdd in *"$1"*) echo "$2$cdd"; esac
+            case $cdd in *$1*) echo "$2$cdd"; esac
         done
     }
-    __cdd_list() {  # print input lines which contain $1
+    __cdd_list() {  # print input lines which match *$1*
         __cdd_list2 "$1" ""
     }
-    __cdd_match() {  # set $cdd to the first line which contains $1, or fail
+    __cdd_match() {  # set $cdd to the first line which matches *$1*, or fail
         while IFS= read -r cdd; do
-            case $cdd in *"$1"*) return 0; esac
+            case $cdd in *$1*) return 0; esac
         done && false
     }
     __cdd_istop() {  # succeed if one of the top $1 (>=0) input lines is $PWD
@@ -84,7 +92,7 @@ if [ -z "${CDGREP-}" ]; then
         done
     }
 else
-    __cdd_list()   { grep -F -- "$1" || :; }  # succeed
+    __cdd_list()   { grep -- "$1" || :; }  # succeed
     __cdd_list2()  { __cdd_list "$1" | sed "s/^/$2/"; }  # $2 must be valid
     __cdd_match()  { cdd=$(__cdd_list "$1" | head -n 1); [ "$cdd" ]; }
     __cdd_istop()  { head -n "$1" | grep -F -x -q -- "$PWD"; }
